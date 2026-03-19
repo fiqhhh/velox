@@ -301,7 +301,7 @@ footer b{color:var(--p2)}
 <section class="hero z1">
   <div class="hero-aurora"></div>
   <div class="wrap">
-    <div class="pill"><span class="pill-dot"></span>Chrome Extension · v2.0 · Gratis</div>
+    <div class="pill"><span class="pill-dot"></span>Extension + Userscript · v2.0 · Gratis</div>
     <h1>VE<em>LOX</em></h1>
     <p class="tagline">Auto-fill form browser. Setting sekali, bot yang kerja — kamu tinggal solve CAPTCHA.</p>
     <div class="cta-row">
@@ -309,7 +309,7 @@ footer b{color:var(--p2)}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
         💻 Desktop
       </a>
-      <a class="btn-main" href="velox-extension.crx" download style="background:linear-gradient(135deg,#166534,#16a34a);box-shadow:0 8px 32px rgba(22,163,74,.4)">
+      <a class="btn-main" href="velox.user.js" download style="background:linear-gradient(135deg,#166534,#16a34a);box-shadow:0 8px 32px rgba(22,163,74,.4)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
         📱 Android
       </a>
@@ -317,7 +317,7 @@ footer b{color:var(--p2)}
         📖 Cara Install
       </a>
     </div>
-    <div class="dl-note">💻 Desktop: ZIP (Chrome/Edge/Brave) &nbsp;·&nbsp; 📱 Android: CRX (Kiwi Browser)</div>
+    <div class="dl-note">💻 Desktop: ZIP (Chrome/Edge/Brave) &nbsp;·&nbsp; 📱 Android: Userscript (Tampermonkey/Kiwi)</div>
   </div>
 </section>
 
@@ -432,13 +432,16 @@ footer b{color:var(--p2)}
       <div class="faq-item">
         <div class="faq-q">Cara install di Android? <span class="faq-arr">▼</span></div>
         <div class="faq-a">
-          Pakai <b>Kiwi Browser</b> (gratis di Play Store) — satu-satunya browser Android yang support Chrome extension.<br><br>
-          1. Download file <b>CRX</b> (tombol hijau di atas) ke HP<br>
-          2. Install <b>Kiwi Browser</b> dari Play Store<br>
-          3. Buka Kiwi → ketik <code>kiwi://extensions</code> di address bar<br>
-          4. Aktifkan <b>Developer Mode</b><br>
-          5. Klik <b>"+ (from .zip/.crx/.user.js)"</b> → pilih file CRX<br>
-          6. ✅ Extension aktif! Setting sama seperti di desktop.
+          Pakai <b>Tampermonkey</b> di Kiwi Browser atau Firefox Android:<br><br>
+          <b>Kiwi Browser:</b><br>
+          1. Install <b>Kiwi Browser</b> dari Play Store<br>
+          2. Buka Kiwi → buka halaman ini → tap <b>📱 Android</b> → download file <code>.user.js</code><br>
+          3. Di Kiwi, install extension <b>Tampermonkey</b> dari Chrome Web Store<br>
+          4. Tampermonkey otomatis detect file → tap <b>Install</b><br>
+          5. ✅ Panel Velox muncul di sudut kanan bawah halaman tiket!<br><br>
+          <b>Firefox Android:</b><br>
+          1. Install <b>Firefox</b> + addon <b>Tampermonkey</b> dari Mozilla Add-ons<br>
+          2. Download file <code>.user.js</code> → Tampermonkey otomatis minta install
         </div>
       </div>
       <div class="faq-item">
