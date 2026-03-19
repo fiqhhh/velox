@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Velox
 // @namespace    https://velox.tools
-// @version      2.1
+// @version      2.2
 // @description  Form auto-fill with full configuration panel
 // @author       anon
 // @match        https://ticket.allobankfest.com/*
@@ -69,8 +69,8 @@
     if (empty) empty.remove();
     const colors = { success:'#16a34a', error:'#dc2626', warn:'#d97706', info:'#6d28d9' };
     const line = document.createElement('div');
-    line.style.cssText = `padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:${colors[type]||'#6d28d9'};display:flex;gap:8px;align-items:baseline`;
-    line.innerHTML = `<span style="color:#94a3b8;font-size:11px;flex-shrink:0;font-family:monospace">${now()}</span><span>${msg}</span>`;
+    line.style.cssText = `padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px;color:${colors[type]||'#6d28d9'};display:flex;gap:10px;align-items:flex-start;line-height:1.4`;
+    line.innerHTML = `<span style="color:#94a3b8;font-size:11px;flex-shrink:0;font-family:monospace;padding-top:1px">${now()}</span><span>${msg}</span>`;
     box.appendChild(line);
     while (box.children.length > 60) box.removeChild(box.firstChild);
     box.scrollTop = box.scrollHeight;
@@ -172,9 +172,7 @@
               const b = document.querySelector('.confirm-info-dialog button.el-button--default:not(.is-disabled)');
               if (b) { b.click(); logUI('Selesaikan CAPTCHA!', 'success'); }
             };
-            tryClick();
-            setTimeout(tryClick, 600);
-            stopBot();
+            tryClick(); setTimeout(tryClick, 600); stopBot();
           }, cfg.tncDelay || 300);
         }, cfg.tncDelay || 300);
       }
@@ -188,103 +186,267 @@
     }
   });
 
-  // ── BUILD UI ────────────────────────────────────────────────
+  // ── UI ──────────────────────────────────────────────────────
   function buildPanel() {
-    const TICKET_TYPES = [
+    const TICKETS = [
       {v:'pink',c:'#ec4899'},{v:'red',c:'#ef4444'},{v:'blue',c:'#3b82f6'},
       {v:'green',c:'#22c55e'},{v:'yellow',c:'#eab308'},{v:'purple',c:'#a855f7'},
-      {v:'orange',c:'#f97316'},{v:'white',c:'#e2e8f0',border:true},{v:'grey',c:'#94a3b8'}
+      {v:'orange',c:'#f97316'},{v:'white',c:'#cbd5e1',border:true},{v:'grey',c:'#94a3b8'}
     ];
 
     const style = document.createElement('style');
     style.textContent = `
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-#vlx-wrap *{box-sizing:border-box;margin:0;padding:0}
-#vlx-wrap{position:fixed;bottom:20px;right:20px;width:340px;font-family:'Outfit',sans-serif;font-size:14px;z-index:2147483647;filter:drop-shadow(0 8px 40px rgba(0,0,0,0.16))}
-#vlx-panel{background:#fff;border-radius:20px;border:1.5px solid #e2e8f0;overflow:hidden;transition:all .28s cubic-bezier(.4,0,.2,1)}
-#vlx-panel.collapsed #vlx-body{display:none}
-#vlx-panel.collapsed #vlx-chevron{transform:rotate(180deg)}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-#vlx-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#7c3aed;cursor:pointer;user-select:none}
-#vlx-header-icon{font-size:20px;line-height:1}
-#vlx-header-text{flex:1;min-width:0}
-#vlx-title{font-weight:700;font-size:15px;color:#fff;letter-spacing:.3px}
-#vlx-status{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#vlx-indicator{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;transition:background .3s}
-#vlx-indicator.on{background:#4ade80;box-shadow:0 0 8px #4ade80;animation:vlxblink 1.2s infinite}
-@keyframes vlxblink{0%,100%{opacity:1}50%{opacity:.3}}
-#vlx-chevron{color:rgba(255,255,255,.55);font-size:12px;transition:transform .28s;flex-shrink:0}
+#vlx-wrap, #vlx-wrap * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
 
-.vlx-tabs{display:flex;background:#f8fafc;border-bottom:1.5px solid #e2e8f0;padding:0 6px}
-.vlx-tab{flex:1;padding:11px 4px;text-align:center;font-size:12px;font-weight:600;color:#94a3b8;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:all .15s}
-.vlx-tab:hover{color:#475569}
-.vlx-tab.active{color:#7c3aed;border-bottom-color:#7c3aed}
-
-.vlx-pane{display:none}
-.vlx-pane.active{display:block}
-.vlx-scroll{max-height:340px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#e2e8f0 transparent}
-.vlx-scroll::-webkit-scrollbar{width:4px}
-.vlx-scroll::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
-
-.vlx-section{padding:16px 18px;border-bottom:1.5px solid #f1f5f9}
-.vlx-section:last-child{border-bottom:none}
-.vlx-stitle{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#7c3aed;margin-bottom:12px}
-
-.vlx-field{margin-bottom:12px}
-.vlx-field:last-child{margin-bottom:0}
-.vlx-field>label{display:block;font-size:13px;font-weight:600;color:#475569;margin-bottom:5px}
-.vlx-field input[type=text],.vlx-field input[type=email],.vlx-field input[type=tel],.vlx-field input[type=number],.vlx-field select{
-  width:100%;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;
-  padding:10px 13px;font-family:'Outfit',sans-serif;font-size:14px;color:#1e293b;
-  outline:none;transition:border-color .15s,box-shadow .15s,background .15s;
-  -webkit-appearance:none;appearance:none;
+#vlx-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 360px;
+  z-index: 2147483647;
+  filter: drop-shadow(0 16px 48px rgba(0,0,0,0.14)) drop-shadow(0 4px 12px rgba(0,0,0,0.08));
 }
-.vlx-field input:focus,.vlx-field select:focus{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.1);background:#fff}
-.vlx-field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 4.5L11 1' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
 
-.vlx-chips{display:flex;flex-wrap:wrap;gap:7px}
-.vlx-chip{display:flex;align-items:center;gap:5px;padding:7px 13px;border-radius:100px;border:1.5px solid #e2e8f0;background:#f8fafc;font-size:12px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all .15s}
-.vlx-chip:hover{border-color:#c4b5fd;color:#6d28d9;background:#faf5ff}
-.vlx-chip.on{border-color:#7c3aed;background:#f5f3ff;color:#6d28d9}
-.vlx-chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#vlx-panel {
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1.5px solid #e8edf3;
+  overflow: hidden;
+}
+#vlx-panel.collapsed #vlx-body { display: none; }
+#vlx-panel.collapsed #vlx-chev { transform: rotate(180deg); }
 
-.vlx-range-wrap{display:flex;align-items:center;gap:12px}
-.vlx-range-wrap input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:#e2e8f0;border-radius:4px;outline:none}
-.vlx-range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#7c3aed;cursor:pointer;box-shadow:0 2px 6px rgba(124,58,237,.35)}
-.vlx-range-val{font-size:13px;font-weight:600;color:#7c3aed;min-width:58px;text-align:right;font-family:'JetBrains Mono',monospace}
+/* ── HEADER ── */
+#vlx-hdr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  cursor: pointer;
+  user-select: none;
+}
+#vlx-hdr-ico { font-size: 22px; line-height: 1; flex-shrink: 0; }
+#vlx-hdr-txt { flex: 1; min-width: 0; }
+#vlx-title { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+#vlx-status {
+  font-size: 12px; color: rgba(255,255,255,0.65);
+  margin-top: 3px; font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#vlx-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,255,255,0.25); flex-shrink: 0;
+  transition: background 0.3s;
+}
+#vlx-dot.on {
+  background: #4ade80;
+  box-shadow: 0 0 10px rgba(74,222,128,0.7);
+  animation: vlxpulse 1.3s infinite;
+}
+@keyframes vlxpulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+#vlx-chev { color: rgba(255,255,255,0.5); font-size: 13px; transition: transform 0.28s; flex-shrink: 0; }
 
-.vlx-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0}
-.vlx-toggle-row+.vlx-toggle-row{border-top:1px solid #f8fafc}
-.vlx-toggle-info{flex:1}
-.vlx-toggle-label{font-size:14px;font-weight:500;color:#1e293b}
-.vlx-toggle-desc{font-size:12px;color:#94a3b8;margin-top:2px}
-.vlx-sw{position:relative;width:42px;height:24px;flex-shrink:0;margin-left:12px}
-.vlx-sw input{opacity:0;width:0;height:0}
-.vlx-sw-sl{position:absolute;inset:0;background:#e2e8f0;border-radius:24px;cursor:pointer;transition:.2s}
-.vlx-sw-sl::before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.vlx-sw input:checked+.vlx-sw-sl{background:#7c3aed}
-.vlx-sw input:checked+.vlx-sw-sl::before{transform:translateX(18px)}
+/* ── TABS ── */
+.vlx-tabs {
+  display: flex;
+  background: #f9fafb;
+  border-bottom: 1.5px solid #f1f5f9;
+  padding: 0 8px;
+  gap: 2px;
+}
+.vlx-tab {
+  flex: 1; padding: 13px 4px; text-align: center;
+  font-size: 12px; font-weight: 700; color: #9ca3af;
+  cursor: pointer; border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px; transition: all 0.15s; letter-spacing: 0.2px;
+}
+.vlx-tab:hover { color: #6b7280; }
+.vlx-tab.active { color: #7c3aed; border-bottom-color: #7c3aed; }
 
-#vlx-log-body{height:210px;overflow-y:auto;padding:12px 16px;background:#fafafa;scrollbar-width:thin;scrollbar-color:#e2e8f0 transparent}
-#vlx-log-body::-webkit-scrollbar{width:4px}
-#vlx-log-body::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
-.vlx-log-empty{text-align:center;color:#cbd5e1;font-size:13px;padding:40px 0}
+/* ── PANES ── */
+.vlx-pane { display: none; }
+.vlx-pane.active { display: block; }
 
-.vlx-btn-row{display:flex;gap:10px;padding:14px 18px;background:#f8fafc;border-top:1.5px solid #e2e8f0}
-.vlx-btn{flex:1;padding:12px 16px;border-radius:12px;border:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s}
-.vlx-btn-save{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0}
-.vlx-btn-save:hover{background:#e2e8f0}
-.vlx-btn-run{background:#7c3aed;color:#fff;box-shadow:0 4px 14px rgba(124,58,237,.35)}
-.vlx-btn-run:hover{background:#6d28d9;transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,.45)}
-.vlx-btn-run:active{transform:none}
-.vlx-btn-stop{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca}
-.vlx-btn-stop:hover{background:#fee2e2}
+.vlx-scroll {
+  max-height: 370px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+.vlx-scroll::-webkit-scrollbar { width: 4px; }
+.vlx-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
 
-.vlx-btn-clear{display:block;width:calc(100% - 32px);margin:10px 16px;padding:9px;border-radius:10px;border:1.5px solid #e2e8f0;background:#f8fafc;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;color:#94a3b8;cursor:pointer;transition:all .15s}
-.vlx-btn-clear:hover{background:#fee2e2;color:#dc2626;border-color:#fecaca}
+/* ── SECTIONS ── */
+.vlx-sec {
+  padding: 22px 22px;
+  border-bottom: 1.5px solid #f8fafc;
+}
+.vlx-sec:last-child { border-bottom: none; }
 
-#vlx-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:#1e293b;color:#fff;padding:10px 22px;border-radius:100px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;transition:transform .32s cubic-bezier(.34,1.56,.64,1);z-index:2147483648;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-#vlx-toast.show{transform:translateX(-50%) translateY(0)}
+.vlx-sec-title {
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: #7c3aed; margin-bottom: 16px;
+}
+
+/* ── FIELDS ── */
+.vlx-field { margin-bottom: 16px; }
+.vlx-field:last-child { margin-bottom: 0; }
+.vlx-field > label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: #374151; margin-bottom: 7px;
+}
+.vlx-field input[type=text],
+.vlx-field input[type=email],
+.vlx-field input[type=tel],
+.vlx-field input[type=number],
+.vlx-field select {
+  width: 100%;
+  background: #f9fafb;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 15px;
+  font-size: 14px;
+  font-family: 'Outfit', sans-serif;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  -webkit-appearance: none; appearance: none;
+}
+.vlx-field input::placeholder { color: #9ca3af; }
+.vlx-field input:focus,
+.vlx-field select:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 4px rgba(124,58,237,0.1);
+  background: #fff;
+}
+.vlx-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpath d='M1 1l6 5.5L13 1' stroke='%239ca3af' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+/* ── CHIPS ── */
+.vlx-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.vlx-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 99px;
+  border: 1.5px solid #e5e7eb; background: #f9fafb;
+  font-size: 13px; font-weight: 600; color: #9ca3af;
+  cursor: pointer; transition: all 0.15s; line-height: 1;
+}
+.vlx-chip:hover { border-color: #c4b5fd; color: #7c3aed; background: #faf5ff; }
+.vlx-chip.on { border-color: #7c3aed; background: #f5f3ff; color: #6d28d9; }
+.vlx-cdot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── RANGE ── */
+.vlx-range-row { display: flex; align-items: center; gap: 14px; }
+.vlx-range-row input[type=range] {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 5px; background: #e5e7eb; border-radius: 99px; outline: none; cursor: pointer;
+}
+.vlx-range-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #7c3aed; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.4);
+}
+.vlx-range-val {
+  font-size: 13px; font-weight: 700; color: #7c3aed;
+  min-width: 60px; text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── TOGGLE ── */
+.vlx-tog-row {
+  display: flex; align-items: center;
+  justify-content: space-between; padding: 12px 0;
+}
+.vlx-tog-row + .vlx-tog-row { border-top: 1px solid #f3f4f6; }
+.vlx-tog-info { flex: 1; padding-right: 16px; }
+.vlx-tog-label { font-size: 14px; font-weight: 600; color: #111827; }
+.vlx-tog-desc { font-size: 12px; color: #9ca3af; margin-top: 3px; line-height: 1.4; }
+.vlx-sw { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+.vlx-sw input { opacity: 0; width: 0; height: 0; }
+.vlx-sw-sl {
+  position: absolute; inset: 0;
+  background: #d1d5db; border-radius: 99px;
+  cursor: pointer; transition: 0.22s;
+}
+.vlx-sw-sl::before {
+  content: ''; position: absolute;
+  left: 4px; top: 4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; transition: 0.22s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.vlx-sw input:checked + .vlx-sw-sl { background: #7c3aed; }
+.vlx-sw input:checked + .vlx-sw-sl::before { transform: translateX(18px); }
+
+/* ── LOG ── */
+#vlx-log-body {
+  height: 220px; overflow-y: auto; padding: 16px 20px;
+  background: #fafafa;
+  scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent;
+}
+#vlx-log-body::-webkit-scrollbar { width: 4px; }
+#vlx-log-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+.vlx-log-empty { text-align: center; color: #d1d5db; font-size: 13px; padding: 48px 0; }
+
+.vlx-log-clear {
+  display: block; width: calc(100% - 40px); margin: 12px 20px;
+  padding: 10px; border-radius: 12px;
+  border: 1.5px solid #e5e7eb; background: #f9fafb;
+  font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600;
+  color: #9ca3af; cursor: pointer; transition: all 0.15s;
+}
+.vlx-log-clear:hover { background: #fee2e2; color: #dc2626; border-color: #fecaca; }
+
+/* ── BUTTONS ── */
+.vlx-btn-row {
+  display: flex; gap: 12px; padding: 18px 22px;
+  background: #f9fafb; border-top: 1.5px solid #f1f5f9;
+}
+.vlx-btn {
+  flex: 1; padding: 14px 16px; border-radius: 14px; border: none;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.18s; letter-spacing: 0.2px;
+}
+.vlx-save {
+  background: #f3f4f6; color: #6b7280;
+  border: 1.5px solid #e5e7eb; flex: 0 0 auto; padding: 14px 20px;
+}
+.vlx-save:hover { background: #e5e7eb; color: #374151; }
+.vlx-run {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  color: #fff; box-shadow: 0 4px 16px rgba(124,58,237,0.38);
+}
+.vlx-run:hover { box-shadow: 0 8px 24px rgba(124,58,237,0.5); transform: translateY(-1px); }
+.vlx-run:active { transform: none; }
+.vlx-stop {
+  background: #fff1f2; color: #e11d48;
+  border: 1.5px solid #fecdd3;
+}
+.vlx-stop:hover { background: #ffe4e6; }
+
+/* ── TOAST ── */
+#vlx-toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: #111827; color: #fff;
+  padding: 12px 24px; border-radius: 99px;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
+  transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1);
+  z-index: 2147483648; pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+#vlx-toast.show { transform: translateX(-50%) translateY(0); }
     `;
     document.head.appendChild(style);
 
@@ -292,15 +454,16 @@
     wrap.id = 'vlx-wrap';
     wrap.innerHTML = `
 <div id="vlx-panel">
-  <div id="vlx-header">
-    <span id="vlx-header-icon">⚡</span>
-    <div id="vlx-header-text">
+  <div id="vlx-hdr">
+    <span id="vlx-hdr-ico">⚡</span>
+    <div id="vlx-hdr-txt">
       <div id="vlx-title">VELOX</div>
       <div id="vlx-status">Siap dijalankan</div>
     </div>
-    <span id="vlx-indicator"></span>
-    <span id="vlx-chevron">▲</span>
+    <span id="vlx-dot"></span>
+    <span id="vlx-chev">▲</span>
   </div>
+
   <div id="vlx-body">
     <div class="vlx-tabs">
       <div class="vlx-tab active" data-pane="config">Config</div>
@@ -309,16 +472,17 @@
       <div class="vlx-tab" data-pane="log">Log</div>
     </div>
 
+    <!-- CONFIG -->
     <div class="vlx-pane active" id="vlx-pane-config">
       <div class="vlx-scroll">
-        <div class="vlx-section">
-          <div class="vlx-stitle">Data Diri</div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Data Diri</div>
           <div class="vlx-field"><label>Nama Lengkap</label><input type="text" id="vlx-name" placeholder="John Doe"/></div>
           <div class="vlx-field"><label>Email</label><input type="email" id="vlx-email" placeholder="email@gmail.com"/></div>
           <div class="vlx-field"><label>Nomor HP</label><input type="tel" id="vlx-phone" placeholder="085xxxxxxxx"/></div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Target Kota</div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Target Kota</div>
           <div class="vlx-field">
             <select id="vlx-city">
               <option value="bandung">Bandung</option>
@@ -331,10 +495,11 @@
       </div>
     </div>
 
+    <!-- TIKET -->
     <div class="vlx-pane" id="vlx-pane-tiket">
       <div class="vlx-scroll">
-        <div class="vlx-section">
-          <div class="vlx-stitle">Hari</div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Hari</div>
           <div class="vlx-field">
             <select id="vlx-day">
               <option value="haritwo">Hari 2</option>
@@ -343,21 +508,21 @@
             </select>
           </div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Tipe Tiket</div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Tipe Tiket</div>
           <div class="vlx-chips" id="vlx-chips">
-            ${TICKET_TYPES.map(t => `<div class="vlx-chip ${cfg.ticketTypes.includes(t.v)?'on':''}" data-type="${t.v}"><span class="vlx-chip-dot" style="background:${t.c}${t.border?';border:1.5px solid #cbd5e1':''}"></span>${t.v.charAt(0).toUpperCase()+t.v.slice(1)}</div>`).join('')}
+            ${TICKETS.map(t => `<div class="vlx-chip ${cfg.ticketTypes.includes(t.v)?'on':''}" data-type="${t.v}"><span class="vlx-cdot" style="background:${t.c}${t.border?';outline:1.5px solid #cbd5e1':''}"></span>${t.v.charAt(0).toUpperCase()+t.v.slice(1)}</div>`).join('')}
           </div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Jumlah Tiket</div>
-          <div class="vlx-range-wrap">
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Jumlah Tiket</div>
+          <div class="vlx-range-row">
             <input type="range" id="vlx-count" min="1" max="8" value="${cfg.ticketCount}"/>
             <span class="vlx-range-val" id="vlx-count-v">${cfg.ticketCount} tiket</span>
           </div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Strategi Pilih</div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Strategi Pilih</div>
           <div class="vlx-field">
             <select id="vlx-strategy">
               <option value="first-available">Pertama tersedia</option>
@@ -370,56 +535,71 @@
       </div>
     </div>
 
+    <!-- ADVANCED -->
     <div class="vlx-pane" id="vlx-pane-adv">
       <div class="vlx-scroll">
-        <div class="vlx-section">
-          <div class="vlx-stitle">Timing</div>
-          <div class="vlx-field"><label>Kecepatan cek form</label>
-            <div class="vlx-range-wrap"><input type="range" id="vlx-interval" min="100" max="2000" step="100" value="${cfg.checkInterval}"/><span class="vlx-range-val" id="vlx-interval-v">${cfg.checkInterval}ms</span></div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Timing</div>
+          <div class="vlx-field">
+            <label>Kecepatan cek form</label>
+            <div class="vlx-range-row"><input type="range" id="vlx-interval" min="100" max="2000" step="100" value="${cfg.checkInterval}"/><span class="vlx-range-val" id="vlx-interval-v">${cfg.checkInterval}ms</span></div>
           </div>
-          <div class="vlx-field"><label>Delay konfirmasi</label>
-            <div class="vlx-range-wrap"><input type="range" id="vlx-cdelay" min="200" max="3000" step="100" value="${cfg.confirmDelay}"/><span class="vlx-range-val" id="vlx-cdelay-v">${cfg.confirmDelay}ms</span></div>
+          <div class="vlx-field">
+            <label>Delay konfirmasi</label>
+            <div class="vlx-range-row"><input type="range" id="vlx-cdelay" min="200" max="3000" step="100" value="${cfg.confirmDelay}"/><span class="vlx-range-val" id="vlx-cdelay-v">${cfg.confirmDelay}ms</span></div>
           </div>
-          <div class="vlx-field"><label>Delay TnC</label>
-            <div class="vlx-range-wrap"><input type="range" id="vlx-tdelay" min="100" max="1000" step="50" value="${cfg.tncDelay}"/><span class="vlx-range-val" id="vlx-tdelay-v">${cfg.tncDelay}ms</span></div>
+          <div class="vlx-field">
+            <label>Delay TnC</label>
+            <div class="vlx-range-row"><input type="range" id="vlx-tdelay" min="100" max="1000" step="50" value="${cfg.tncDelay}"/><span class="vlx-range-val" id="vlx-tdelay-v">${cfg.tncDelay}ms</span></div>
           </div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Auto Reload</div>
-          <div class="vlx-toggle-row">
-            <div class="vlx-toggle-info"><div class="vlx-toggle-label">Auto reload</div><div class="vlx-toggle-desc">Reload jika tiket habis</div></div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Auto Reload</div>
+          <div class="vlx-tog-row">
+            <div class="vlx-tog-info">
+              <div class="vlx-tog-label">Auto reload</div>
+              <div class="vlx-tog-desc">Reload otomatis jika tiket habis</div>
+            </div>
             <label class="vlx-sw"><input type="checkbox" id="vlx-autoreload" ${cfg.autoReload?'checked':''}/><span class="vlx-sw-sl"></span></label>
           </div>
-          <div class="vlx-field" style="margin-top:10px"><label>Delay reload</label>
-            <div class="vlx-range-wrap"><input type="range" id="vlx-rdelay" min="500" max="10000" step="500" value="${cfg.reloadDelay}"/><span class="vlx-range-val" id="vlx-rdelay-v">${cfg.reloadDelay}ms</span></div>
+          <div class="vlx-field" style="margin-top:14px">
+            <label>Delay reload</label>
+            <div class="vlx-range-row"><input type="range" id="vlx-rdelay" min="500" max="10000" step="500" value="${cfg.reloadDelay}"/><span class="vlx-range-val" id="vlx-rdelay-v">${cfg.reloadDelay}ms</span></div>
           </div>
-          <div class="vlx-field" style="margin-top:10px">
-            <label>Max retry <span style="color:#94a3b8;font-weight:400">(0 = tak terbatas)</span></label>
-            <input type="number" id="vlx-maxretry" value="${cfg.maxRetry}" min="0" max="100" style="width:80px"/>
+          <div class="vlx-field" style="margin-top:14px">
+            <label>Max retry <span style="color:#9ca3af;font-weight:400">(0 = tak terbatas)</span></label>
+            <input type="number" id="vlx-maxretry" value="${cfg.maxRetry}" min="0" max="100" style="width:90px"/>
           </div>
         </div>
-        <div class="vlx-section">
-          <div class="vlx-stitle">Lainnya</div>
-          <div class="vlx-toggle-row">
-            <div class="vlx-toggle-info"><div class="vlx-toggle-label">Notifikasi suara</div><div class="vlx-toggle-desc">Beep saat tiket ditemukan</div></div>
+        <div class="vlx-sec">
+          <div class="vlx-sec-title">Lainnya</div>
+          <div class="vlx-tog-row">
+            <div class="vlx-tog-info">
+              <div class="vlx-tog-label">Notifikasi suara</div>
+              <div class="vlx-tog-desc">Beep saat tiket ditemukan</div>
+            </div>
             <label class="vlx-sw"><input type="checkbox" id="vlx-sound" ${cfg.soundAlert?'checked':''}/><span class="vlx-sw-sl"></span></label>
           </div>
-          <div class="vlx-toggle-row">
-            <div class="vlx-toggle-info"><div class="vlx-toggle-label">Auto confirm TnC</div><div class="vlx-toggle-desc">Centang syarat otomatis</div></div>
+          <div class="vlx-tog-row">
+            <div class="vlx-tog-info">
+              <div class="vlx-tog-label">Auto confirm TnC</div>
+              <div class="vlx-tog-desc">Centang syarat & privasi otomatis</div>
+            </div>
             <label class="vlx-sw"><input type="checkbox" id="vlx-autoconfirm" ${cfg.autoConfirm?'checked':''}/><span class="vlx-sw-sl"></span></label>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- LOG -->
     <div class="vlx-pane" id="vlx-pane-log">
       <div id="vlx-log-body"><div class="vlx-log-empty">Log kosong — jalankan bot dulu</div></div>
-      <button class="vlx-btn-clear" id="vlx-clear-log">Hapus Log</button>
+      <button class="vlx-log-clear" id="vlx-clear">Hapus Log</button>
     </div>
 
     <div class="vlx-btn-row">
-      <button class="vlx-btn vlx-btn-save" id="vlx-save">💾 Simpan</button>
-      <button class="vlx-btn vlx-btn-run" id="vlx-start">▶ Jalankan</button>
+      <button class="vlx-btn vlx-save" id="vlx-save">💾 Simpan</button>
+      <button class="vlx-btn vlx-run" id="vlx-start">▶ Jalankan</button>
     </div>
   </div>
 </div>`;
@@ -429,7 +609,7 @@
     toast.id = 'vlx-toast';
     document.body.appendChild(toast);
 
-    // Populate fields
+    // Populate
     document.getElementById('vlx-name').value = cfg.name;
     document.getElementById('vlx-email').value = cfg.email;
     document.getElementById('vlx-phone').value = cfg.phone;
@@ -447,8 +627,7 @@
       });
     });
 
-    // Collapse
-    document.getElementById('vlx-header').addEventListener('click', () => {
+    document.getElementById('vlx-hdr').addEventListener('click', () => {
       document.getElementById('vlx-panel').classList.toggle('collapsed');
     });
 
@@ -493,27 +672,25 @@
       showToast('✅ Config tersimpan!');
     });
 
-    // Start / Stop
     document.getElementById('vlx-start').addEventListener('click', () => {
       if (isRunning) { stopBot(); return; }
       document.getElementById('vlx-save').click();
       setTimeout(startBot, 100);
     });
 
-    // Clear log
-    document.getElementById('vlx-clear-log').addEventListener('click', () => {
+    document.getElementById('vlx-clear').addEventListener('click', () => {
       document.getElementById('vlx-log-body').innerHTML = '<div class="vlx-log-empty">Log kosong — jalankan bot dulu</div>';
     });
   }
 
   function updateBtnState(running) {
     const btn = document.getElementById('vlx-start');
-    const dot = document.getElementById('vlx-indicator');
+    const dot = document.getElementById('vlx-dot');
     if (!btn) return;
     if (running) {
-      btn.textContent = '⏹ Stop'; btn.className = 'vlx-btn vlx-btn-stop'; dot.classList.add('on');
+      btn.textContent = '⏹ Stop'; btn.className = 'vlx-btn vlx-stop'; dot.classList.add('on');
     } else {
-      btn.textContent = '▶ Jalankan'; btn.className = 'vlx-btn vlx-btn-run'; dot.classList.remove('on');
+      btn.textContent = '▶ Jalankan'; btn.className = 'vlx-btn vlx-run'; dot.classList.remove('on');
     }
   }
 
