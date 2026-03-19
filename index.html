@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Velox — Form Automation Extension</title>
+<meta name="description" content="Lightweight Chrome Extension for auto-filling forms with full configuration."/>
+<meta property="og:title" content="Velox — Form Automation Extension"/>
+<meta property="og:description" content="Lightweight Chrome Extension for auto-filling forms."/>
+<meta property="og:type" content="website"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070f;
+  --s1:#0f0f1c;
+  --s2:#161625;
+  --bdr:#1f1f35;
+  --p:#7c3aed;
+  --p2:#a855f7;
+  --p3:#c084fc;
+  --grn:#22d65f;
+  --yel:#f5c518;
+  --txt:#ede9fe;
+  --muted:#6366a0;
+  --head:'Bebas Neue',sans-serif;
+  --body:'Plus Jakarta Sans',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--body);overflow-x:hidden;min-height:100vh}
+
+/* NOISE OVERLAY */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.5;
+}
+
+/* GRID BG */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(124,58,237,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.035) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0;
+}
+
+.z1{position:relative;z-index:1}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px}
+
+/* ── NAV ─────────────────────────────────── */
+nav{
+  padding:20px 0;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--bdr);
+}
+.nav-logo{font-family:var(--head);font-size:26px;letter-spacing:2px;color:var(--txt)}
+.nav-logo span{color:var(--p2)}
+.nav-link{
+  font-size:12px;font-weight:600;letter-spacing:.5px;
+  color:var(--muted);text-decoration:none;
+  border:1px solid var(--bdr);padding:7px 16px;border-radius:100px;
+  transition:all .2s;
+}
+.nav-link:hover{color:var(--p2);border-color:var(--p)}
+
+/* ── HERO ─────────────────────────────────── */
+.hero{
+  text-align:center;
+  padding:80px 0 64px;
+  position:relative;
+}
+.hero-aurora{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:700px;height:400px;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 30% 50%,rgba(124,58,237,.18) 0%,transparent 55%),
+    radial-gradient(ellipse at 70% 50%,rgba(79,70,229,.14) 0%,transparent 55%);
+}
+
+.pill{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);
+  border-radius:100px;padding:5px 14px;
+  font-family:var(--mono);font-size:10px;color:var(--p2);
+  letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:24px;
+  animation:up .5s ease both;
+}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);box-shadow:0 0 6px var(--grn);animation:blink 1.4s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+h1{
+  font-family:var(--head);
+  font-size:clamp(56px,12vw,104px);
+  line-height:.9;letter-spacing:3px;
+  margin-bottom:8px;
+  animation:up .5s .08s ease both;
+}
+h1 em{
+  font-style:normal;
+  background:linear-gradient(135deg,#c084fc 0%,#a855f7 40%,#7c3aed 70%,#4f46e5 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+.tagline{
+  font-size:17px;line-height:1.6;
+  color:var(--muted);max-width:480px;margin:0 auto 40px;
+  animation:up .5s .16s ease both;
+}
+
+/* CTA BUTTONS */
+.cta-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;animation:up .5s .24s ease both}
+
+.btn-main{
+  display:inline-flex;align-items:center;gap:9px;
+  background:linear-gradient(135deg,#7c3aed,#a855f7);
+  color:#fff;padding:15px 32px;border-radius:14px;
+  font-size:15px;font-weight:700;text-decoration:none;
+  box-shadow:0 8px 32px rgba(124,58,237,.45);
+  transition:all .2s;border:none;cursor:pointer;font-family:var(--body);
+}
+.btn-main:hover{transform:translateY(-2px);box-shadow:0 12px 44px rgba(124,58,237,.6)}
+.btn-main:active{transform:none}
+
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:7px;
+  color:var(--muted);padding:14px 24px;border-radius:14px;
+  font-size:14px;font-weight:600;text-decoration:none;
+  border:1px solid var(--bdr);background:transparent;
+  transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--p);color:var(--p2)}
+
+.dl-note{
+  font-family:var(--mono);font-size:10px;color:var(--muted);
+  margin-top:10px;animation:up .5s .3s ease both;
+}
+
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── STATS BAR ───────────────────────────── */
+.stats-bar{
+  display:flex;justify-content:center;gap:0;
+  border:1px solid var(--bdr);border-radius:16px;
+  background:var(--s1);overflow:hidden;
+  margin:0 auto 72px;max-width:540px;
+  animation:up .5s .35s ease both;
+}
+.stat{
+  flex:1;padding:18px 16px;text-align:center;
+  border-right:1px solid var(--bdr);
+}
+.stat:last-child{border-right:none}
+.stat-n{font-family:var(--head);font-size:32px;color:var(--p2);letter-spacing:1px}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+
+/* ── SECTION HEADING ─────────────────────── */
+.sh{
+  display:flex;align-items:baseline;gap:12px;margin-bottom:20px;
+}
+.sh h2{font-family:var(--head);font-size:34px;letter-spacing:1px}
+.sh-line{flex:1;height:1px;background:linear-gradient(to right,var(--bdr),transparent)}
+.sh-num{font-family:var(--mono);font-size:11px;color:var(--p2);padding:2px 8px;background:rgba(124,58,237,.1);border-radius:4px}
+
+/* ── INSTALL STEPS ───────────────────────── */
+.steps{display:flex;flex-direction:column;gap:12px;margin-bottom:72px}
+
+.step-card{
+  display:grid;grid-template-columns:52px 1fr;gap:0;
+  background:var(--s1);border:1px solid var(--bdr);border-radius:16px;
+  overflow:hidden;transition:border-color .2s;
+}
+.step-card:hover{border-color:rgba(124,58,237,.35)}
+
+.step-num-col{
+  background:linear-gradient(180deg,rgba(124,58,237,.12),rgba(124,58,237,.04));
+  display:flex;align-items:center;justify-content:center;
+  border-right:1px solid var(--bdr);
+}
+.sn{
+  font-family:var(--head);font-size:28px;color:var(--p2);
+  line-height:1;
+}
+.step-body{padding:18px 20px}
+.step-title{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.7}
+.step-desc b{color:var(--txt)}
+.step-desc code{
+  font-family:var(--mono);font-size:11px;
+  background:rgba(124,58,237,.12);color:var(--p2);
+  padding:1px 6px;border-radius:4px;
+}
+
+.code-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--bdr);
+  border-radius:8px;padding:8px 14px;
+  font-family:var(--mono);font-size:12px;color:#c084fc;
+  margin-top:10px;cursor:pointer;transition:border-color .2s;
+}
+.code-pill:hover{border-color:var(--p)}
+.copy-icon{font-size:11px;color:var(--muted)}
+
+/* ── FEATURES GRID ───────────────────────── */
+.feat-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:10px;margin-bottom:72px;
+}
+.feat-card{
+  background:var(--s1);border:1px solid var(--bdr);border-radius:14px;
+  padding:20px 16px;transition:all .2s;
+}
+.feat-card:hover{border-color:rgba(124,58,237,.35);transform:translateY(-2px)}
+.feat-icon{font-size:24px;margin-bottom:10px}
+.feat-title{font-size:13px;font-weight:700;margin-bottom:5px}
+.feat-desc{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── TICKET TYPES ────────────────────────── */
+.ticket-section{margin-bottom:72px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.chip{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:100px;
+  border:1px solid var(--bdr);background:var(--s1);
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  transition:border-color .2s;
+}
+.chip:hover{border-color:rgba(124,58,237,.4)}
+.cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chip.off{opacity:.4}
+
+/* ── FAQ ──────────────────────────────────── */
+.faq-section{margin-bottom:72px}
+.faq-list{display:flex;flex-direction:column;gap:0}
+.faq-item{border-bottom:1px solid var(--bdr)}
+.faq-q{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:16px 0;cursor:pointer;
+  font-size:14px;font-weight:600;
+  transition:color .2s;user-select:none;
+}
+.faq-q:hover{color:var(--p2)}
+.faq-arr{font-size:12px;color:var(--muted);transition:transform .25s}
+.faq-a{display:none;font-size:13px;color:var(--muted);line-height:1.7;padding-bottom:14px}
+.faq-a a{color:var(--p2)}
+.faq-item.open .faq-a{display:block}
+.faq-item.open .faq-arr{transform:rotate(180deg)}
+.faq-item.open .faq-q{color:var(--p2)}
+
+/* ── CTA BOTTOM ──────────────────────────── */
+.cta-bottom{
+  text-align:center;padding:56px 0 80px;
+  border-top:1px solid var(--bdr);
+}
+.cta-bottom h2{font-family:var(--head);font-size:48px;margin-bottom:10px}
+.cta-bottom p{font-size:14px;color:var(--muted);margin-bottom:28px}
+
+/* ── FOOTER ──────────────────────────────── */
+footer{
+  padding:24px 0;border-top:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  font-size:12px;color:var(--muted);
+}
+footer b{color:var(--p2)}
+
+/* ── TOAST ────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--grn);color:#000;
+  padding:9px 22px;border-radius:100px;
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index:999;pointer-events:none;
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── RESP ─────────────────────────────────── */
+@media(max-width:640px){
+  .feat-grid{grid-template-columns:repeat(2,1fr)}
+  .stats-bar{flex-wrap:wrap}
+  .stat{border-right:none;border-bottom:1px solid var(--bdr)}
+  .stat:last-child{border-bottom:none}
+  footer{flex-direction:column;text-align:center}
+}
+@media(max-width:440px){
+  .feat-grid{grid-template-columns:1fr}
+  h1{font-size:52px}
+}
+</style>
+</head>
+<body class="z1">
+
+<div class="wrap z1">
+  <nav>
+    <div class="nav-logo">VE<span>LOX</span></div>
+    <a href="#install" class="nav-link">Cara Install ↓</a>
+  </nav>
+</div>
+
+<!-- HERO -->
+<section class="hero z1">
+  <div class="hero-aurora"></div>
+  <div class="wrap">
+    <div class="pill"><span class="pill-dot"></span>Chrome Extension · v2.0 · Gratis</div>
+    <h1>VE<em>LOX</em></h1>
+    <p class="tagline">Auto-fill form browser. Setting sekali, bot yang kerja — kamu tinggal solve CAPTCHA.</p>
+    <div class="cta-row">
+      <a class="btn-main" href="velox-extension.zip" download>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Download Extension
+      </a>
+      <a class="btn-ghost" href="#install">
+        📖 Cara Install
+      </a>
+    </div>
+    <div class="dl-note">ZIP · ~20KB · Chrome / Edge / Brave</div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="wrap z1">
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-n">9</div><div class="stat-l">Tipe Tiket</div></div>
+    <div class="stat"><div class="stat-n">8×</div><div class="stat-l">Max Tiket</div></div>
+    <div class="stat"><div class="stat-n">100ms</div><div class="stat-l">Min Interval</div></div>
+    <div class="stat"><div class="stat-n">∞</div><div class="stat-l">Auto Reload</div></div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="sh"><h2>Fitur</h2><div class="sh-line"></div></div>
+  <div class="feat-grid" style="margin-bottom:72px">
+    <div class="feat-card"><div class="feat-icon">📝</div><div class="feat-title">Auto-Fill Form</div><div class="feat-desc">Nama, email, nomor HP diisi otomatis sesuai config</div></div>
+    <div class="feat-card"><div class="feat-icon">🎫</div><div class="feat-title">Filter Tiket</div><div class="feat-desc">Pilih tipe, hari, dan strategi: tercepat / tier tertinggi / random</div></div>
+    <div class="feat-card"><div class="feat-icon">🔄</div><div class="feat-title">Auto Reload</div><div class="feat-desc">Reload otomatis kalau tiket habis, delay bisa diatur</div></div>
+    <div class="feat-card"><div class="feat-icon">⚡</div><div class="feat-title">Kecepatan Custom</div><div class="feat-desc">Interval check 100ms–2000ms, sesuaikan dengan koneksi</div></div>
+    <div class="feat-card"><div class="feat-icon">📋</div><div class="feat-title">Live Log</div><div class="feat-desc">Pantau setiap langkah bot real-time dari popup</div></div>
+    <div class="feat-card"><div class="feat-icon">🔔</div><div class="feat-title">Notif Suara</div><div class="feat-desc">Beep otomatis begitu tiket yang kamu mau ketemu</div></div>
+  </div>
+
+  <!-- INSTALL STEPS -->
+  <div id="install" class="sh"><span class="sh-num">PANDUAN</span><h2>Cara Install</h2><div class="sh-line"></div></div>
+  <div class="steps">
+
+    <div class="step-card">
+      <div class="step-num-col"><div class="sn">01</div></div>
+      <div class="step-body">
+        <div class="step-title">⬇️ Download & Extract ZIP</div>
+        <div class="step-desc">
+          Klik tombol <b>Download Extension</b> di atas. Setelah selesai download, <b>klik kanan file ZIP → Extract All</b> (atau unzip). Kamu akan dapat folder bernama <code>velox-extension</code>.<br><br>
+          <b>Jangan hapus foldernya</b> — extension ini harus tetap ada di komputer selama dipakai.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num-col"><div class="sn">02</div></div>
+      <div class="step-body">
+        <div class="step-title">🔧 Buka Halaman Extensions Chrome</div>
+        <div class="step-desc">
+          Buka Chrome, klik address bar, ketik lalu tekan Enter:
+          <div class="code-pill" onclick="copyText('chrome://extensions',this)">
+            <span>chrome://extensions</span><span class="copy-icon">📋 salin</span>
+          </div>
+          <br>Setelah halaman terbuka, aktifkan <b>Developer Mode</b> — togglenya ada di pojok <b>kanan atas</b>. Kalau sudah, akan muncul tiga tombol baru di kiri atas.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num-col"><div class="sn">03</div></div>
+      <div class="step-body">
+        <div class="step-title">📂 Load Extension</div>
+        <div class="step-desc">
+          Klik tombol <b>"Load unpacked"</b>. Akan muncul dialog pilih folder.<br><br>
+          Cari dan pilih folder <code>velox-extension</code> yang tadi kamu extract. Klik <b>Select Folder</b>.<br><br>
+          ✅ Kalau berhasil, kartu <b>Velox</b> akan muncul di halaman itu, dan icon 🎫 muncul di toolbar Chrome kanan atas.
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num-col"><div class="sn">04</div></div>
+      <div class="step-body">
+        <div class="step-title">⚙️ Setting & Jalankan</div>
+        <div class="step-desc">
+          Klik icon 🎫 di toolbar → isi data diri di tab <b>Config</b> → pilih tipe tiket di tab <b>Tiket</b> → atur kecepatan di tab <b>Lanjutan</b>.<br><br>
+          Klik <b>💾 Simpan Config</b> → klik <b>▶ Jalankan Bot</b>.<br><br>
+          Bot otomatis isi form dan pilih tiket. Saat CAPTCHA muncul → <b>selesaikan sendiri</b>, setelah itu tiket berhasil didapat! 🎉
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TICKET TYPES -->
+  <div class="ticket-section">
+    <div class="sh"><h2>Tipe Tiket</h2><div class="sh-line"></div></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:4px">Pilih mana saja yang mau diburu. GREY di-skip secara default.</p>
+    <div class="chips">
+      <div class="chip"><span class="cdot" style="background:#ec4899"></span>PINK</div>
+      <div class="chip"><span class="cdot" style="background:#ef4444"></span>RED</div>
+      <div class="chip"><span class="cdot" style="background:#3b82f6"></span>BLUE</div>
+      <div class="chip"><span class="cdot" style="background:#22c55e"></span>GREEN</div>
+      <div class="chip"><span class="cdot" style="background:#eab308"></span>YELLOW</div>
+      <div class="chip"><span class="cdot" style="background:#a855f7"></span>PURPLE</div>
+      <div class="chip"><span class="cdot" style="background:#f97316"></span>ORANGE</div>
+      <div class="chip"><span class="cdot" style="background:#e2e8f0;border:1px solid #333"></span>WHITE</div>
+      <div class="chip off"><span class="cdot" style="background:#6b7280"></span>GREY (default off)</div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="faq-section">
+    <div class="sh"><h2>FAQ</h2><div class="sh-line"></div></div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Apakah extension ini aman? <span class="faq-arr">▼</span></div>
+        <div class="faq-a">Iya. Extension ini hanya berjalan di halaman <code>target site</code>. Semua data (nama, email, dll) disimpan lokal di browser kamu, tidak dikirim ke mana pun.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Kenapa CAPTCHA tetap harus manual? <span class="faq-arr">▼</span></div>
+        <div class="faq-a">CAPTCHA memang dirancang agar tidak bisa diotomasi — itulah tujuannya. Bot ini menangani semua bagian yang membutuhkan kecepatan (isi form, pilih tiket, centang syarat), kamu hanya perlu solve CAPTCHA di akhir.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Bisa di browser selain Chrome? <span class="faq-arr">▼</span></div>
+        <div class="faq-a">Bisa! Kompatibel dengan <b>Microsoft Edge</b>, <b>Brave</b>, dan <b>Opera</b>. Cara installnya sama persis. Firefox tidak support karena perbedaan sistem extension.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Extension hilang setelah Chrome restart? <span class="faq-arr">▼</span></div>
+        <div class="faq-a">Kadang Chrome meminta konfirmasi untuk tetap mengaktifkan extension yang di-load manual. Kalau muncul notif "Disable developer mode extensions", klik <b>Keep</b> atau <b>Cancel</b> (jangan klik Disable).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Cara update ke versi baru? <span class="faq-arr">▼</span></div>
+        <div class="faq-a">Download ZIP versi baru → extract → timpa folder lama → di <code>chrome://extensions</code> klik ikon reload 🔄 di kartu Velox.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA BOTTOM -->
+  <div class="cta-bottom">
+    <h2>SIAP BERBURU? 🎫</h2>
+    <p>Download gratis, install 3 langkah, langsung jalan.</p>
+    <a class="btn-main" href="velox-extension.zip" download>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>
+      Download Velox v2.0
+    </a>
+  </div>
+
+  <footer>
+    <span>Velox v2.0</span>
+    <span>Gunakan sesuai <b>T&C event</b> ya 🙏</span>
+  </footer>
+</div>
+
+<div id="toast">✅ Disalin!</div>
+
+<script>
+// FAQ
+document.querySelectorAll('.faq-q').forEach(q=>{
+  q.addEventListener('click',()=>{
+    const item=q.closest('.faq-item');
+    const open=item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i=>i.classList.remove('open'));
+    if(!open) item.classList.add('open');
+  });
+});
+
+// Copy
+function copyText(text, el){
+  navigator.clipboard.writeText(text).then(()=>{
+    const t=document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+    const orig=el.querySelector('.copy-icon').textContent;
+    el.querySelector('.copy-icon').textContent='✅ tersalin';
+    setTimeout(()=>el.querySelector('.copy-icon').textContent=orig,2000);
+  });
+}
+</script>
+</body>
+</html>
